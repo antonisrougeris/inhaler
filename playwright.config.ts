@@ -22,7 +22,11 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "npm run dev:next",
+        // CI builds in the preceding step; local runs prepare a fresh build.
+        // Exercise production assets, without the dev server's origin restrictions.
+        command: process.env.CI
+          ? "npm run start"
+          : "npm run build && npm run start",
         url: "http://127.0.0.1:3000/el",
         reuseExistingServer: false,
         timeout: 120000,

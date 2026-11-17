@@ -51,7 +51,11 @@ test("prelaunch checkout and unauthorized admin are protected", async ({
 test("FAQ expands without motion dependency", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/en/faq");
-  await page.getByText("What is flavored air?", { exact: true }).click();
+  const question = page.locator("summary").filter({
+    hasText: "What is flavored air?",
+  });
+  await question.click();
+  await expect(question.locator("..")).toHaveAttribute("open", "");
   await expect(
     page.getByText(
       "The concept passes air through an aroma core, without a heating mechanism.",
