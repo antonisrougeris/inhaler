@@ -31,6 +31,10 @@ test("catalog and variants remain previews before launch", async ({ page }) => {
 test("kit builder preserves pack choices visually", async ({ page }) => {
   await page.goto("/en/starter-kit");
   await page.getByRole("button", { name: "4 packs" }).click();
+  await expect(page.getByRole("button", { name: "4 packs" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByLabel("Pack 4", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Keep me in the loop" }),

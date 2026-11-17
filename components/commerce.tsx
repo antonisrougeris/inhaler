@@ -358,8 +358,11 @@ export function KitBuilder({
           </div>
           {Array.from({ length: packs }, (_, i) => (
             <label key={i}>
-              {t(locale, "Συσκευασία", "Pack")} {i + 1}
+              <span id={`kit-pack-label-${i}`}>
+                {t(locale, "Συσκευασία", "Pack")} {i + 1}
+              </span>
               <select
+                aria-labelledby={`kit-pack-label-${i}`}
                 value={flavors[i]}
                 onChange={(e) =>
                   setFlavors((f) =>
