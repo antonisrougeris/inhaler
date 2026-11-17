@@ -1,0 +1,53 @@
+name: formair
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: formair
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: formair
+    volumes:
+      - formair_pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U formair -d formair"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [formair]
+  migrate:
+    build: {context: ., target: tools}
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://formair:${POSTGRES_PASSWORD}@db:5432/formair
+    depends_on:
+      db: {condition: service_healthy}
+    command: ["npm", "run", "db:migrate"]
+    networks: [formair]
+    profiles: [tools]
+  app:
+    build: {context: ., target: runner}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://formair:${POSTGRES_PASSWORD}@db:5432/formair
+      APP_ENV: ${APP_ENV:-staging}
+      NODE_ENV: production
+    ports: ["127.0.0.1:3107:3000"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [formair]
+  jobs:
+    build: {context: ., target: tools}
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://formair:${POSTGRES_PASSWORD}@db:5432/formair
+    command: ["npm", "run", "jobs:run"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [formair]
+    profiles: [tools]
+volumes:
+  formair_pg:
+networks:
+  formair:
