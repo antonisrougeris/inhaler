@@ -1,0 +1,8 @@
+node_modules
+.next
+generated
+.local-db
+.preview-db
+.test-db
+package-lock.json
+test-results

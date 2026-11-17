@@ -1,0 +1,53 @@
+name: Validate FORM AIR
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: formair
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: formair
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U formair -d formair"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://formair:test-only@localhost:5432/formair
+      APP_URL: http://127.0.0.1:3000
+      APP_ENV: test
+      BETTER_AUTH_SECRET: ci-fixture-only-not-a-production-secret-0123456789
+      PAYMENT_PROVIDER: mock
+      SHIPPING_PROVIDER: mock
+      ALLOW_TEST_COMMERCE: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: npm}
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: {name: playwright-report, path: test-results/}
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target runner -t formair:ci .
